@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>%TITLE%</title>
+    <title>%URL_TITLE%</title>
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="%TITLE%" />
-    <meta name="twitter:description" content="%DESCRIPTION%" />
-    <meta name="twitter:image" content="%IMAGE%" />
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="og:title" content="%URL_TITLE%" />
+    <meta name="og:description" content="%DESCRIPTION%" />
+    <meta name="og:image" content="%IMAGE%" />
+    <meta name="og:url" content="%URL%" />
 
     <link href="https://fonts.googleapis.com/css?family=Outfit:100,200,300,regular,500,600,700,800,900" rel="stylesheet" />
 
@@ -108,16 +109,16 @@
            align-items:     center;
        }
 
-       .card__price,
-       .card__countdown {
+       .card__owner,
+       .card__contract {
            display:     flex;
            align-items: center;
            font-weight: 500;
        }
 
-       .card__price { color: var(--aqua); }
+       .card__owner { color: var(--aqua); }
 
-       .card__countdown { color: var(--blue-yonder); }
+       .card__contract { color: var(--blue-yonder); }
 
 
        .card__author-name a {
@@ -148,15 +149,19 @@
         <p class="card__text">%DESCRIPTION%</p>
 
         <div class="wrapper">
-            <div class="card__price">
+            <div class="card__owner">
                 <span>%OWNER_ID%</span>
             </div>
 
-            <div class="card__countdown">
+            <div class="card__contract">
                 <span>%CONTRACT_ID%</span>
             </div>
         </div>
 
+    </div>
+
+    <div>
+        <a href="https://twitter.com/share" class="twitter-share-button" data-text="Look at my NFT on NEAR: %URL_TITLE%" data-hashtags="NearNFT" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     </div>
 </div>
 </body>

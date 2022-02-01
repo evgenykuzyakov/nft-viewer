@@ -1,12 +1,13 @@
 use crate::*;
-use near_contract_standards::non_fungible_token::metadata::NFTContractMetadata;
-use near_contract_standards::non_fungible_token::Token;
+use near_contract_standards::non_fungible_token::metadata::{NFTContractMetadata, TokenMetadata};
+use near_contract_standards::non_fungible_token::TokenId;
 use near_sdk::json_types::Base64VecU8;
-use near_sdk::serde_json;
+use near_sdk::{env, serde_json};
 use std::collections::HashMap;
 use std::str::FromStr;
 
 const INDEX_BODY: &str = include_str!("../res/index.html");
+const IPFS_PREFIX: &str = "https://cloudflare-ipfs.com/ipfs";
 
 #[allow(dead_code)]
 #[derive(Deserialize)]
@@ -31,6 +32,14 @@ pub struct Web4Response {
     body_url: Option<String>,
     #[serde(rename = "preloadUrls")]
     preload_urls: Option<Vec<String>>,
+}
+
+#[derive(Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Token {
+    pub token_id: TokenId,
+    pub owner_id: AccountId,
+    pub metadata: Option<TokenMetadata>,
 }
 
 impl Web4Response {
@@ -75,10 +84,10 @@ impl Web4Response {
 fn filter_string(s: String) -> String {
     s.chars()
         .into_iter()
-        .take(250)
         .filter_map(|c| match c {
             '\n' => Some(' '),
-            ' ' | '_' | '.' | '-' | ',' | '!' | '(' | ')' => Some(c),
+            ' ' | '_' | '.' | '-' | ',' | '!' | '(' | ')' | '/' | '=' | ':' | '+' | '?' | '#'
+            | '%' | '|' => Some(c),
             _ if c.is_alphanumeric() => Some(c),
             _ => None,
         })
@@ -90,6 +99,11 @@ impl Contract {
     #[allow(unused_variables)]
     pub fn web4_get(&self, request: Web4Request) -> Web4Response {
         let path = request.path;
+
+        if path == "/robots.txt" {
+            return Web4Response::plain_response("User-agent: *\nDisallow:".to_string());
+        }
+
         let (nft_account_id, token_id) = path[1..].split_once('/').expect("Token ID is missing");
         let nft_account_id = AccountId::from_str(nft_account_id).expect("Invalid NFT account ID");
         let nft_metadata_url =
@@ -121,7 +135,42 @@ impl Contract {
                     .0,
             )
             .expect("Failed to parse NFT Metadata");
-            Web4Response::plain_response(serde_json::to_string(&token).unwrap())
+            let token_metadata = token.metadata.expect("Token metadata is missing");
+            let token_media = token_metadata.media.unwrap_or_default();
+
+            let image_url = if let Some(base_uri) = &nft_metadata.base_uri {
+                format!("{}/{}", base_uri, token_media)
+            } else if token_media.starts_with("Qm") {
+                format!("{}/{}", IPFS_PREFIX, token_media)
+            } else {
+                token_media
+            };
+
+            let token_title = filter_string(token_metadata.title.unwrap_or_default());
+
+            Web4Response::html_response(
+                INDEX_BODY
+                    .replace("%IMAGE%", &filter_string(image_url))
+                    .replace("%TITLE%", &token_title)
+                    .replace(
+                        "%URL_TITLE%",
+                        &filter_string(format!("{} | {}", token_title, nft_metadata.name)),
+                    )
+                    .replace(
+                        "%DESCRIPTION%",
+                        &filter_string(
+                            token_metadata
+                                .description
+                                .unwrap_or_else(|| nft_metadata.name),
+                        ),
+                    )
+                    .replace("%OWNER_ID%", &token.owner_id.to_string())
+                    .replace("%CONTRACT_ID%", &nft_account_id.to_string())
+                    .replace(
+                        "%URL%",
+                        &format!("{}.page{}", env::current_account_id().to_string(), path),
+                    ),
+            )
         } else {
             Web4Response::preload_urls(vec![nft_metadata_url, token_url])
         }
