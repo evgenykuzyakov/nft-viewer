@@ -1,6 +1,5 @@
 use crate::*;
 use near_contract_standards::non_fungible_token::metadata::{NFTContractMetadata, TokenMetadata};
-use near_contract_standards::non_fungible_token::TokenId;
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::{env, serde_json};
 use std::collections::HashMap;
@@ -37,7 +36,6 @@ pub struct Web4Response {
 #[derive(Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Token {
-    pub token_id: TokenId,
     pub owner_id: AccountId,
     pub metadata: Option<TokenMetadata>,
 }
