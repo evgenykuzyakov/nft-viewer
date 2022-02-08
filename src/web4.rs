@@ -136,7 +136,12 @@ impl Contract {
             let token_metadata = token.metadata.expect("Token metadata is missing");
             let token_media = token_metadata.media.unwrap_or_default();
 
-            let image_url = if let Some(base_uri) = &nft_metadata.base_uri {
+            let image_url = if token_media.starts_with("https://")
+                || token_media.starts_with("http://")
+                || token_media.starts_with("data:image")
+            {
+                token_media
+            } else if let Some(base_uri) = &nft_metadata.base_uri {
                 format!("{}/{}", base_uri, token_media)
             } else if token_media.starts_with("Qm") {
                 format!("{}/{}", IPFS_PREFIX, token_media)
